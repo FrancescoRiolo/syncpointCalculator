@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syncpoint Calculator — A Film Scoring BPM Tool by Francesco Riolo</title>
+<link rel="stylesheet" href="find_tempo.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-icon" onclick="toggleTheme()" title="Toggle dark / light theme">
+    <img src="logo.png" alt="Syncpoint Calculator">
+  </div>
+  <h1>Syncpoint Calculator</h1>
+  <div class="header-sep"></div>
+  <span class="header-sub">A Film Scoring BPM Tool</span>
+  <div class="header-spacer"></div>
+  <span class="header-badge">by Francesco Riolo</span>
+</header>
+
+<div class="main">
+
+  <!-- ══ LEFT: settings ══ -->
+  <div class="left-panel" id="panelSettings">
+    <div class="section-title">Import MIDI</div>
+    <button class="mobile-import-btn" onclick="document.getElementById('fileInput').click()">
+      Load MIDI / XML file
+      <span id="mobileFileLabel">no file selected</span>
+    </button>
+    <div class="import-area" id="importArea">
+      <input type="file" id="fileInput" accept=".mid,.midi,.xml">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <p><strong>Click or drag</strong> a file<br>
+        <span class="ext-tag">.mid</span>
+        <span class="ext-tag">.midi</span>
+        <span class="ext-tag">.xml</span>
+      </p>
+    </div>
+
+    <div class="settings">
+      <div class="setting-group-title">Project</div>
+      <div class="setting-row">
+        <label>Framerate</label>
+        <select id="fps">
+          <option value="23.976">23.976 Non-Drop</option>
+          <option value="24">24 Non-Drop</option>
+          <option value="24.98">24.98 Non-Drop</option>
+          <option value="25">25 Non-Drop</option>
+          <option value="29.97">29.97 Non-Drop</option>
+          <option value="29.97df" selected>29.97 Drop</option>
+          <option value="30">30 Non-Drop</option>
+          <option value="30df">30 Drop</option>
+          <option value="50">50 Non-Drop</option>
+          <option value="59.94">59.94 Non-Drop</option>
+          <option value="60">60 Non-Drop</option>
+        </select>
+      </div>
+
+      <div class="setting-group-title">BPM Search</div>
+      <div class="setting-row">
+        <label>BPM Min</label>
+        <div class="num-wrap" style="width:110px"><input type="number" id="bpmMin" value="100" min="1" max="400" step="0.25"><div class="num-arrows"><button type="button" onclick="stepNum('bpmMin',1)"></button><button type="button" onclick="stepNum('bpmMin',-1)"></button></div></div>
+      </div>
+      <div class="setting-row">
+        <label>BPM Max</label>
+        <div class="num-wrap" style="width:110px"><input type="number" id="bpmMax" value="140" min="1" max="400" step="0.25"><div class="num-arrows"><button type="button" onclick="stepNum('bpmMax',1)"></button><button type="button" onclick="stepNum('bpmMax',-1)"></button></div></div>
+      </div>
+      <div class="setting-row">
+        <label>BPM Step</label>
+        <div class="num-wrap" style="width:110px"><input type="number" id="bpmStep" value="0.25" min="0.001" max="10" step="0.001"><div class="num-arrows"><button type="button" onclick="stepNum('bpmStep',1)"></button><button type="button" onclick="stepNum('bpmStep',-1)"></button></div></div>
+      </div>
+
+      <div class="setting-group-title">Tolerance</div>
+      <div class="setting-row">
+        <label title="Maximum margin within which a marker is considered perfectly on-beat (Hit). Lower = stricter.">Hitpoint Threshold (fr)</label>
+        <div class="tol-row">
+          <div class="num-wrap"><input type="number" id="tolerance" value="1" min="0" max="200" step="1"><div class="num-arrows"><button type="button" onclick="stepNum('tolerance',1)"></button><button type="button" onclick="stepNum('tolerance',-1)"></button></div></div>
+          <input type="hidden" id="toleranceUnit" value="frames">
+        </div>
+      </div>
+      <div class="setting-row">
+        <label title="Multiplier of the Hitpoint Threshold: a marker is Near if it falls within N × threshold. E.g. threshold 1fr × 3 → Near zone = ±3fr.">Frame Tolerance Window</label>
+        <div class="num-wrap"><input type="number" id="nearMult" value="3" min="1" max="20" step="1"><div class="num-arrows"><button type="button" onclick="stepNum('nearMult',1)"></button><button type="button" onclick="stepNum('nearMult',-1)"></button></div></div>
+      </div>
+
+      <div class="setting-group-title">Grid Offset (frames)</div>
+      <div class="offset-grid">
+        <span class="offset-label" title="Minimum offset to test. Use negative values if markers tend to anticipate the beat.">Min</span>
+        <span class="offset-label" title="Maximum offset to test. The algorithm tries every offset between Min and Max and keeps the best result.">Max</span>
+        <span class="offset-label" title="Increment between offsets. Step 1 = test every frame, Step 2 = every two frames, etc.">Step</span>
+        <div class="num-wrap"><input type="number" id="offsetMin" value="0" min="-50" max="0" step="1"><div class="num-arrows"><button type="button" onclick="stepNum('offsetMin',1)"></button><button type="button" onclick="stepNum('offsetMin',-1)"></button></div></div>
+        <div class="num-wrap"><input type="number" id="offsetMax" value="0" min="0" max="50" step="1"><div class="num-arrows"><button type="button" onclick="stepNum('offsetMax',1)"></button><button type="button" onclick="stepNum('offsetMax',-1)"></button></div></div>
+        <div class="num-wrap"><input type="number" id="offsetStep" value="1" min="1" max="10" step="1"><div class="num-arrows"><button type="button" onclick="stepNum('offsetStep',1)"></button><button type="button" onclick="stepNum('offsetStep',-1)"></button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-resizer" id="colResizer1"></div>
+
+  <!-- ══ CENTER: results ══ -->
+  <div class="right-panel" id="panelResults">
+    <div class="search-bar">
+      <button class="search-btn" id="searchBtn" disabled>Search</button>
+      <div class="max-hits-badge" id="maxHitsBadge" style="display:none;">
+        Max: <strong id="maxHitsVal">0</strong>
+      </div>
+      <span style="color:#6c7086;font-size:10px;" id="searchInfo"></span>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+      <span class="progress-label" id="progressLabel"></span>
+    </div>
+
+    <div class="results-wrap" id="resultsWrap">
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <p>Import a file and run the search</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- resizer + linguetta collapse integrata -->
+  <div class="col-resizer-wrap" id="colResizer2Wrap">
+    <div class="col-resizer" id="colResizer2"></div>
+    <div class="collapse-tab" id="collapseTab" onclick="toggleMarkerPanel()" title="Collapse / Expand Markers">
+      <svg id="collapseTabSvg" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT: marker table ══ -->
+  <div class="center-panel collapsed" id="panelMarkers">
+
+    <!-- Tab verticale visibile solo quando collassato -->
+    <div class="panel-collapsed-tab" onclick="toggleMarkerPanel()" title="Expand Markers">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="tab-label">Marker</span>
+    </div>
+
+    <div class="marker-toolbar">
+      <span class="section-title" style="padding:0; margin-right:4px;">
+        Marker <span id="markerCount" style="color:#cba6f7;"></span>
+      </span>
+      <button class="btn-sm accent" onclick="addMarkerAtEnd()"><svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
+      <button class="btn-sm danger" onclick="clearAllMarkers()"><svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>Clear</button>
+      <span style="flex:1"></span>
+      <button class="btn-sm undoredo" id="undoBtn" onclick="historyUndo()" disabled title="Undo (Ctrl+Z)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
+      <button class="btn-sm undoredo" id="redoBtn" onclick="historyRedo()" disabled title="Redo (Ctrl+Y)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 0 4-4h12"/></svg></button>
+      <span style="color:#6c7086;font-size:10px;margin-left:4px;" id="midiInfo"></span>
+    </div>
+
+    <div class="marker-table-wrap">
+      <table class="mtable">
+        <colgroup>
+          <col class="check-col">
+          <col class="col-num">
+          <col class="col-tc">
+          <col class="col-name">
+          <col class="col-weight">
+          <col class="td-actions">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="check-col"></th>
+            <th class="col-num">#</th>
+            <th class="col-tc">SMPTE</th>
+            <th class="col-name">NAME</th>
+            <th class="col-weight">WEIGHT</th>
+            <th class="td-actions"></th>
+          </tr>
+        </thead>
+        <tbody id="markerTbody">
+          <tr><td colspan="7" style="text-align:center;color:#45475a;padding:24px;">
+            Import a MIDI file or add markers manually
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <nav class="mobile-tabs" id="mobileTabs">
+    <button class="mobile-tab active" onclick="switchTab('settings',this)">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+    <button class="mobile-tab" onclick="switchTab('results',this)">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Results
+    </button>
+    <button class="mobile-tab" onclick="switchTab('markers',this)">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>
+      Markers
+    </button>
+  </nav>
+</div><!-- .main -->
+
+<script src="find_tempo.js"></script>
+</body>
+</html>
